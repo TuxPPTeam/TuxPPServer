@@ -19,16 +19,11 @@ public slots:
     void start();
     void shutdown();
 
-private slots:
-    void remove();
-
 protected:
     void incomingConnection(qintptr socketDescriptor);
 
 private:
     QMainWindow *window;
-    QList<Worker*> workers;
-    QThreadPool *pool;
 };
 
 #endif // MYSERVER_H

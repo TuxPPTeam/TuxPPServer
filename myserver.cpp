@@ -5,8 +5,7 @@
 
 MyServer::MyServer(QMainWindow *w, QObject *parent) :
     QTcpServer(parent),
-    window(w),
-    pool(QThreadPool::globalInstance())
+    window(w)
 {
 
 }
@@ -27,16 +26,7 @@ void MyServer::shutdown()
 {      
     this->close();
 
-    for (int i=0; i<workers.size(); ++i)
-    {
-        workers.at(i)->disconnected();
-    }
     qDebug() << "Server is shut down";
-}
-
-void MyServer::remove()
-{
-    workers.removeAt(workers.indexOf(static_cast<Worker*>(QObject::sender())));
 }
 
 // This function is called by QTcpServer when a new connection is available.
@@ -49,8 +39,6 @@ void MyServer::incomingConnection(qintptr socketDescriptor)
     //MyThread *thread = new MyThread(socketDescriptor, this);
 
     Worker *worker = new Worker(socketDescriptor, this);
-    worker->setAutoDelete(true);
-    workers.push_back(worker);
 
     // connect signal/slot
     // once a thread is not needed, it will be beleted later
@@ -58,7 +46,6 @@ void MyServer::incomingConnection(qintptr socketDescriptor)
     connect(worker, SIGNAL(dataRecieved(QByteArray)), window, SLOT(writeData(QByteArray)));
     connect(worker, SIGNAL(remove()), this, SLOT(remove()));
 
-    //thread->start();
     QThreadPool::globalInstance()->start(worker);
 }
 

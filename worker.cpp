@@ -8,7 +8,13 @@ Worker::Worker(qintptr ID, QObject *parent) :
     parent(parent),
     loop(new QEventLoop(this))
 {
-    //this->socketDescriptor = ID;
+
+}
+
+Worker::~Worker()
+{
+    delete loop;
+    delete socket;
 }
 
 void Worker::run()
@@ -32,17 +38,11 @@ void Worker::run()
     connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()), Qt::DirectConnection);
     connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
 
+    loop->exec();
     // We'll have multiple clients, we want to know which is which
     qDebug() << socketDescriptor << " Client connected";
 
-    socket->waitForReadyRead();
-
-    loop->
-    loop->exec();
-
-    delete socket;
-    delete loop;
-    //exec();
+    qDebug() << "Read succesfull? " << socket->waitForReadyRead();
 }
 
 void Worker::readyRead()

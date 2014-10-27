@@ -10,6 +10,7 @@ class Worker : public QObject, public QRunnable
     Q_OBJECT
 public:
     explicit Worker(qintptr ID, QObject *parent = 0);
+    ~Worker();
     void run();
 
 signals:
