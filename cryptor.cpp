@@ -1,5 +1,5 @@
 #include "cryptor.h"
 
-Cryptor::Cryptor()
-{
+Cryptor::Cryptor() {
+
 }

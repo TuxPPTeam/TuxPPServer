@@ -1,16 +1,20 @@
 #ifndef MYSERVER_H
 #define MYSERVER_H
 
+#define PORTNO 1234
+
 #include <QTcpServer>
 #include <QSslSocket>
 #include <QMainWindow>
 #include <QList>
+#include "dbmanager.h"
 
 #ifdef ENCRYPTED
     typedef QSslSocket Socket;
 #else
     typedef QTcpSocket Socket;
 #endif
+
 
 class MyServer : public QTcpServer
 {
@@ -37,6 +41,7 @@ protected:
 private:
     QMainWindow *window;
     QList<Socket*> sockets;
+    DBmanager manager;
 
 #ifdef ENCRYPTED
     int setSsl(Socket*);

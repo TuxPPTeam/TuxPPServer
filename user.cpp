@@ -3,16 +3,22 @@
 User::User(QObject *parent) :
     QObject(parent)
 {
+
 }
 
-int User::setUsername(const QString newUsername)
+User::User(QObject *parent, QString username, QByteArray host, QByteArray pubKey) :
+    QObject(parent)
 {
-    if (newUsername.length() > MAX_USERNAME_LENGTH)
-    {
+    setUsername(username);
+    setHost(host);
+    setPubKey(pubKey);
+}
+
+int User::setUsername(const QString newUsername) {
+    if ((unsigned int)newUsername.length() > MAX_USERNAME_LENGTH) {
         return -1;
     }
-    else
-    {
+    else {
         bool set;
         if (username.isEmpty() || username.isNull()) {
             set = false;
@@ -27,8 +33,7 @@ int User::setUsername(const QString newUsername)
     }
 }
 
-void User::setHost(const QString newHost)
-{
+void User::setHost(const QByteArray newHost) {
     bool set;
     if (host.isEmpty() || host.isNull()) {
         set = false;
@@ -41,8 +46,7 @@ void User::setHost(const QString newHost)
     }
 }
 
-void User::setPubKey(const QString newPubKey)
-{
+void User::setPubKey(const QByteArray newPubKey) {
     bool set;
     if (pubKey.isEmpty() || host.isNull()) {
         set = false;
@@ -53,4 +57,16 @@ void User::setPubKey(const QString newPubKey)
     if (set) {
         emit propertyChanged();
     }
+}
+
+QString User::getUsername() {
+    return username;
+}
+
+QByteArray User::getHost() {
+    return host;
+}
+
+QByteArray User::getPubKey() {
+    return pubKey;
 }

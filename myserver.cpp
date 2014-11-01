@@ -1,11 +1,12 @@
 #include "myserver.h"
 
-#define PORTNO 1234
-
 MyServer::MyServer(QMainWindow *w, QObject *parent) :
     QTcpServer(parent),
-    window(w) {
-
+    window(w)
+{
+    manager.establishConnection();
+    User u(this, "Zdeno", QString("255.255.255.255").toLocal8Bit(), QString("aaa").toLocal8Bit());
+    manager.insertUser(&u);
 }
 
 void MyServer::start() {
@@ -27,6 +28,7 @@ void MyServer::shutdown() {
         socket->deleteLater();
     }
 
+    manager.closeConnection();
     qDebug() << "Server is shut down";
 }
 
@@ -109,5 +111,3 @@ int MyServer::setSsl(Socket *socket) {
     return 0;
 }
 #endif
-
-
