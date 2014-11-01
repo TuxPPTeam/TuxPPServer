@@ -9,16 +9,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    worker.cpp \
     user.cpp \
-    mythread.cpp \
     myserver.cpp \
     cryptor.cpp
 
 HEADERS  += mainwindow.h \
-    worker.h \
     user.h \
-    mythread.h \
     myserver.h \
     cryptor.h
 
