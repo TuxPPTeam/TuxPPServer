@@ -8,6 +8,7 @@ class User : public QObject
     Q_OBJECT
 public:
     explicit User(QObject *parent = 0);
+    static const unsigned int MAX_USERNAME_LENGTH = 32;
 
 signals:
     void propertyChanged();

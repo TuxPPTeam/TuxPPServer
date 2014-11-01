@@ -7,20 +7,22 @@ User::User(QObject *parent) :
 
 int User::setUsername(const QString newUsername)
 {
-    if (newUsername.length() > 32)
+    if (newUsername.length() > MAX_USERNAME_LENGTH)
     {
         return -1;
     }
     else
     {
         bool set;
-        if (username.isEmpty() || username.isNull())
+        if (username.isEmpty() || username.isNull()) {
             set = false;
+        }
         if (username != newUsername) {
             username = newUsername;
         }
-        if (set)
+        if (set) {
             emit propertyChanged();
+        }
         return 0;
     }
 }
@@ -28,23 +30,27 @@ int User::setUsername(const QString newUsername)
 void User::setHost(const QString newHost)
 {
     bool set;
-    if (host.isEmpty() || host.isNull())
+    if (host.isEmpty() || host.isNull()) {
         set = false;
+    }
     if (host != newHost) {
         host = newHost;
     }
-    if (set)
+    if (set) {
         emit propertyChanged();
+    }
 }
 
 void User::setPubKey(const QString newPubKey)
 {
     bool set;
-    if (pubKey.isEmpty() || host.isNull())
+    if (pubKey.isEmpty() || host.isNull()) {
         set = false;
+    }
     if (pubKey != newPubKey) {
         pubKey = newPubKey;
     }
-    if (set)
+    if (set) {
         emit propertyChanged();
+    }
 }
