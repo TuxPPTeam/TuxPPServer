@@ -5,8 +5,6 @@ MyServer::MyServer(QMainWindow *w, QObject *parent) :
     window(w)
 {
     manager.establishConnection();
-    User u(this, "Zdeno", QString("255.255.255.255").toLocal8Bit(), QString("aaa").toLocal8Bit());
-    manager.insertUser(&u);
 }
 
 void MyServer::start() {
@@ -23,9 +21,14 @@ void MyServer::shutdown() {
     this->close();
 
     // Close each connection and delete sockets
-    foreach (Socket *socket, sockets) {
+    foreach (QSocket *socket, sockets) {
         socket->close();
         socket->deleteLater();
+    }
+
+    // Delete all online users
+    foreach (User* u, onlineUsers) {
+        u->deleteLater();
     }
 
     manager.closeConnection();
@@ -34,7 +37,7 @@ void MyServer::shutdown() {
 
 void MyServer::disconnected() {
     // Get calling socket
-    Socket *socket = qobject_cast<Socket*>(sender());
+    QSocket *socket = qobject_cast<QSocket*>(sender());
     qDebug() << socket->peerAddress().toString() << " disconnected.";
     // Remove it from active sockets and delete
     sockets.removeAll(socket);
@@ -46,7 +49,8 @@ void MyServer::incomingConnection(qintptr socketDescriptor) {
     // We have a new connection
     qDebug() << socketDescriptor << " Connecting...";
 
-    Socket *socket = new Socket(this);
+    QSocket *socket = new QSocket(this);
+
     // Set ID and connect signals, if failed, delete socket
     if(socket->setSocketDescriptor(socketDescriptor)) {
 
@@ -74,7 +78,7 @@ void MyServer::incomingConnection(qintptr socketDescriptor) {
 
 void MyServer::socketReady() {
     // Get calling socket
-    Socket *socket = qobject_cast<Socket*>(sender());
+    QSocket *socket = qobject_cast<QSocket*>(sender());
     qDebug() << socket->peerAddress().toString() << " connected.";
 
     // Start recieving data
@@ -89,18 +93,48 @@ void MyServer::errorOccured(QList<QSslError> errors) {
 
 void MyServer::readyRead() {
     // Get calling socket
-    Socket *socket = qobject_cast<Socket*>(sender());
+    QSocket *socket = qobject_cast<QSocket*>(sender());
 #ifdef ENCRYPTED
     if (socket->isEncrypted()) {
+        QSslConfiguration config = socket->sslConfiguration();
 #else
     if (socket->isReadable()) {
 #endif
         // Read all data
         QByteArray data = socket->readAll();
 
-        qDebug() << data;
-        emit dataReady(data);
-        socket->write("Reading done.");
+//################################################################################################
+//######### REMOVE WHEN CONNECTING WITH CLIENT, NOT TERMINAL #####################################
+//################################################################################################
+
+        // Remove last 2 bytes - \n\r
+        //data.chop(2);
+
+//################################################################################################
+//################################################################################################
+//################################################################################################
+        QList<QByteArray> tokens = data.split('|');
+
+        // Register client
+        if (tokens.at(0) == QByteArray("register")) {
+            registerUser(tokens.at(1), tokens.at(2), socket->peerAddress().toIPv4Address());
+
+        // Login client
+        } else if (tokens.at(0) == QByteArray("login")) {
+            login(tokens.at(1), socket->peerAddress().toIPv4Address(), socket);
+
+        // Logout client
+        } else if (tokens.at(0) == QByteArray("logout")) {
+            logout(tokens.at(1));
+
+        // Send client online users
+        } else if (tokens.at(0) == QByteArray("getusers")) {
+            getUserList(socket);
+
+        // Unknown command
+        } else {
+            qDebug() << "Unknown command: " << tokens.at(0);
+        }
     }
 }
 
@@ -111,3 +145,58 @@ int MyServer::setSsl(Socket *socket) {
     return 0;
 }
 #endif
+
+bool MyServer::registerUser(QByteArray userName, QByteArray pubKey, quint32 host) {
+    if (!manager.isConnected()) {
+        qDebug() << "DB is not connected!";
+        return false;
+    }
+    User *user = new User(this, userName, host, pubKey);
+    bool result = manager.insertUser(user);
+    user->deleteLater();
+    return result;
+}
+
+bool MyServer::login(QByteArray userName, quint32 host, QSocket *socket) {
+    if (!manager.isConnected()) {
+        qDebug() << "DB is not connected!";
+        return false;
+    }
+    QList<User*> users = manager.getUsersByName(userName);
+    if (users.isEmpty()) {
+        qDebug() << "Cannot login, unregistered user or wrong username";
+        return false;
+    }
+    User *u = manager.getUsersByName(userName).first();
+    if (u == NULL) {
+        return false;
+    }
+    u->setHost(host);
+    onlineUsers[u->getID()] = u;
+    socket->write("Logged\n");
+    emit dataReady(userName);
+    socket->disconnect();
+    return true;
+}
+
+bool MyServer::logout(QByteArray userName) {
+    if (!manager.isConnected()) {
+        qDebug() << "DB is not connected!";
+        return false;
+    }
+    User *u = manager.getUsersByName(userName).first();
+    if (u == NULL) {
+        return false;
+    }
+    return !onlineUsers.remove(u->getID());
+}
+
+bool MyServer::getUserList(QSocket *socket) {
+    QByteArray userList;
+    foreach (User* u, onlineUsers) {
+        userList.append(u->getUsername()).append(", ");
+    }
+    userList.chop(2);
+
+    return socket->write(userList) > 0;
+}

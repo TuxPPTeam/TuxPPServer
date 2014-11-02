@@ -6,67 +6,68 @@ User::User(QObject *parent) :
 
 }
 
-User::User(QObject *parent, QString username, QByteArray host, QByteArray pubKey) :
+User::User(QObject *parent, QString userName, qint32 host, QByteArray pubKey) :
     QObject(parent)
 {
-    setUsername(username);
+    ID = -1;
+    setUsername(userName);
     setHost(host);
     setPubKey(pubKey);
 }
 
-int User::setUsername(const QString newUsername) {
+User::User(QObject *parent, qint64 ID, QString userName, qint32 host, QByteArray pubKey) :
+    QObject(parent)
+{
+    setID(ID);
+    setUsername(userName);
+    setHost(host);
+    setPubKey(pubKey);
+}
+
+bool User::setID(const qint64 newID) {
+    if (ID != -1) {
+        ID = newID;
+        return true;
+    }
+    return false;
+}
+
+bool User::setUsername(const QString newUsername) {
     if ((unsigned int)newUsername.length() > MAX_USERNAME_LENGTH) {
-        return -1;
+        return false;
     }
     else {
-        bool set;
-        if (username.isEmpty() || username.isNull()) {
-            set = false;
-        }
-        if (username != newUsername) {
-            username = newUsername;
-        }
-        if (set) {
-            emit propertyChanged();
-        }
-        return 0;
+        username = newUsername;
+        return true;
     }
 }
 
-void User::setHost(const QByteArray newHost) {
-    bool set;
-    if (host.isEmpty() || host.isNull()) {
-        set = false;
-    }
-    if (host != newHost) {
+void User::setHost(const qint32 newHost) {
         host = newHost;
-    }
-    if (set) {
-        emit propertyChanged();
-    }
 }
 
 void User::setPubKey(const QByteArray newPubKey) {
-    bool set;
-    if (pubKey.isEmpty() || host.isNull()) {
-        set = false;
-    }
-    if (pubKey != newPubKey) {
         pubKey = newPubKey;
-    }
-    if (set) {
-        emit propertyChanged();
-    }
 }
 
-QString User::getUsername() {
+qint64 User::getID() const {
+    return ID;
+}
+
+QString User::getUsername() const {
     return username;
 }
 
-QByteArray User::getHost() {
+qint32 User::getHost() const {
     return host;
 }
 
-QByteArray User::getPubKey() {
+QByteArray User::getPubKey() const {
     return pubKey;
+}
+
+bool User::operator ==(const User &user) const {
+    return  (user.getID() == ID) &&
+            (user.getUsername() == username) &&
+            (user.getPubKey() == pubKey);
 }

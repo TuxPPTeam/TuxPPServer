@@ -2,17 +2,19 @@
 #define MYSERVER_H
 
 #define PORTNO 1234
+//#define ENCRYPTED
 
 #include <QTcpServer>
 #include <QSslSocket>
 #include <QMainWindow>
 #include <QList>
+#include <QMap>
 #include "dbmanager.h"
 
 #ifdef ENCRYPTED
-    typedef QSslSocket Socket;
+    typedef QSslSocket QSocket;
 #else
-    typedef QTcpSocket Socket;
+    typedef QTcpSocket QSocket;
 #endif
 
 
@@ -40,8 +42,14 @@ protected:
 
 private:
     QMainWindow *window;
-    QList<Socket*> sockets;
+    QList<QSocket*> sockets;
+    QMap<quint64, User*> onlineUsers;
     DBmanager manager;
+
+    bool registerUser(QByteArray, QByteArray, quint32 host);
+    bool login(QByteArray, quint32 host, QSocket *socket);
+    bool logout(QByteArray);
+    bool getUserList(QSocket*);
 
 #ifdef ENCRYPTED
     int setSsl(Socket*);
