@@ -5,7 +5,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
-    server = new MyServer(this);
+    server = new Server(this);
     connect(server, SIGNAL(dataReady(QByteArray)), this, SLOT(writeData(QByteArray)));
 }
 

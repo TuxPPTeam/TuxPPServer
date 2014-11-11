@@ -1,13 +1,13 @@
-#include "myserver.h"
+#include "server.h"
 
-MyServer::MyServer(QMainWindow *w, QObject *parent) :
+Server::Server(QMainWindow *w, QObject *parent) :
     QTcpServer(parent),
     window(w)
 {
     manager.establishConnection();
 }
 
-void MyServer::start() {
+void Server::start() {
     if(!this->listen(QHostAddress::Any, PORTNO)) {
         qDebug() << "Could not start server";
     }
@@ -16,7 +16,7 @@ void MyServer::start() {
     }
 }
 
-void MyServer::shutdown() {
+void Server::shutdown() {
     // Stop listening
     this->close();
 
@@ -35,7 +35,7 @@ void MyServer::shutdown() {
     qDebug() << "Server is shut down";
 }
 
-void MyServer::disconnected() {
+void Server::disconnected() {
     // Get calling socket
     QSocket *socket = qobject_cast<QSocket*>(sender());
     qDebug() << socket->peerAddress().toString() << " disconnected.";
@@ -45,7 +45,7 @@ void MyServer::disconnected() {
 }
 
 // This function is called by QTcpServer when a new connection is available.
-void MyServer::incomingConnection(qintptr socketDescriptor) {
+void Server::incomingConnection(qintptr socketDescriptor) {
     // We have a new connection
     qDebug() << socketDescriptor << " Connecting...";
 
@@ -76,7 +76,7 @@ void MyServer::incomingConnection(qintptr socketDescriptor) {
     }
 }
 
-void MyServer::socketReady() {
+void Server::socketReady() {
     // Get calling socket
     QSocket *socket = qobject_cast<QSocket*>(sender());
     qDebug() << socket->peerAddress().toString() << " connected.";
@@ -85,13 +85,13 @@ void MyServer::socketReady() {
     connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
 }
 
-void MyServer::errorOccured(QList<QSslError> errors) {
+void Server::errorOccured(QList<QSslError> errors) {
     foreach (QSslError error, errors) {
         qDebug() << "SSL error during hadshake: " << error.errorString();
     }
 }
 
-void MyServer::readyRead() {
+void Server::readyRead() {
     // Get calling socket
     QSocket *socket = qobject_cast<QSocket*>(sender());
 #ifdef ENCRYPTED
@@ -103,6 +103,16 @@ void MyServer::readyRead() {
         // Read all data
         QByteArray data = socket->readAll();
 
+        switch (data.at(0))
+        {
+            case ECHO: echo(data.mid(sizeof(command)), socket); break;
+            case LOGIN: login(data.mid(sizeof(command)), socket->peerAddress().toIPv4Address(), socket); break;
+            case LOGOUT: logout(data.mid(sizeof(command))); break;
+            //case REGISTER: registerUser(sizeof(command), socket->peerAddress().toIPv4Address()); break;
+            case GETUSERS: getUserList(socket); break;
+            default: qDebug() << "Unknown command = " + data.at(0);
+        }
+
 //################################################################################################
 //######### REMOVE WHEN CONNECTING WITH CLIENT, NOT TERMINAL #####################################
 //################################################################################################
@@ -113,7 +123,7 @@ void MyServer::readyRead() {
 //################################################################################################
 //################################################################################################
 //################################################################################################
-        QList<QByteArray> tokens = data.split('|');
+        /*QList<QByteArray> tokens = data.split('|');
 
         // Register client
         if (tokens.at(0) == QByteArray("register")) {
@@ -134,30 +144,38 @@ void MyServer::readyRead() {
         // Unknown command
         } else {
             qDebug() << "Unknown command: " << tokens.at(0);
-        }
+        }*/
     }
 }
 
 #ifdef ENCRYPTED
-int MyServer::setSsl(Socket *socket) {
+int Server::setSsl(Socket *socket) {
     // Set all needed SSL information, such as ciphers, certificates, mode, ...
 
     return 0;
 }
 #endif
 
-bool MyServer::registerUser(QByteArray userName, QByteArray pubKey, quint32 host) {
-    if (!manager.isConnected()) {
+void Server::echo(QByteArray data, QSocket *socket) {
+    int n;
+    if ((n = socket->write(data)) > 0) {
+        qDebug() << n + " bytes written to " + socket->peerAddress().toString();
+    }
+}
+
+bool Server::registerUser(QByteArray userName, quint32 host) {
+    /*if (!manager.isConnected()) {
         qDebug() << "DB is not connected!";
         return false;
     }
-    User *user = new User(this, userName, host, pubKey);
-    bool result = manager.insertUser(user);
-    user->deleteLater();
-    return result;
+    //User *user = new User(this, userName, host, pubKey);
+    //bool result = manager.insertUser(user);
+    //user->deleteLater();
+    return result;*/
+    return false;
 }
 
-bool MyServer::login(QByteArray userName, quint32 host, QSocket *socket) {
+bool Server::login(QByteArray userName, quint32 host, QSocket *socket) {
     if (!manager.isConnected()) {
         qDebug() << "DB is not connected!";
         return false;
@@ -179,7 +197,7 @@ bool MyServer::login(QByteArray userName, quint32 host, QSocket *socket) {
     return true;
 }
 
-bool MyServer::logout(QByteArray userName) {
+bool Server::logout(QByteArray userName) {
     if (!manager.isConnected()) {
         qDebug() << "DB is not connected!";
         return false;
@@ -191,7 +209,7 @@ bool MyServer::logout(QByteArray userName) {
     return !onlineUsers.remove(u->getID());
 }
 
-bool MyServer::getUserList(QSocket *socket) {
+bool Server::getUserList(QSocket *socket) {
     QByteArray userList;
     foreach (User* u, onlineUsers) {
         userList.append(u->getUsername()).append(", ");

@@ -1,5 +1,5 @@
-#ifndef MYSERVER_H
-#define MYSERVER_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #define PORTNO 1234
 //#define ENCRYPTED
@@ -18,11 +18,13 @@
 #endif
 
 
-class MyServer : public QTcpServer
+
+
+class Server : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit MyServer(QMainWindow*, QObject *parent = 0);
+    explicit Server(QMainWindow*, QObject *parent = 0);
 
 signals:
     void dataReady(QByteArray);
@@ -46,14 +48,17 @@ private:
     QMap<quint64, User*> onlineUsers;
     DBmanager manager;
 
-    bool registerUser(QByteArray, QByteArray, quint32 host);
+    void echo(QByteArray, QSocket *socket);
+    bool registerUser(QByteArray, quint32 host);
     bool login(QByteArray, quint32 host, QSocket *socket);
     bool logout(QByteArray);
     bool getUserList(QSocket*);
+
+    enum command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
 
 #ifdef ENCRYPTED
     int setSsl(Socket*);
 #endif
 };
 
-#endif // MYSERVER_H
+#endif // SERVER_H
