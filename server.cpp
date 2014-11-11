@@ -193,7 +193,7 @@ bool Server::login(QByteArray userName, quint32 host, QSocket *socket) {
     onlineUsers[u->getID()] = u;
     socket->write("Logged\n");
     emit dataReady(userName);
-    socket->disconnect();
+    socket->disconnect();;
     return true;
 }
 
@@ -217,4 +217,13 @@ bool Server::getUserList(QSocket *socket) {
     userList.chop(2);
 
     return socket->write(userList) > 0;
+}
+
+bool MyServer::isUserAlive(User *u) {
+    QSocket *socket = new QSocket();
+    socket->connectToHost(QHostAddress(u->getHost()), PORTNO);
+}
+
+void refresh() {
+
 }

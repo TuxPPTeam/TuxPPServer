@@ -39,6 +39,8 @@ private slots:
     void disconnected();
     void readyRead();
 
+    void refresh();
+
 protected:
     void incomingConnection(qintptr);
 
@@ -55,6 +57,8 @@ private:
     bool getUserList(QSocket*);
 
     enum command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
+
+    bool isUserAlive(User*);
 
 #ifdef ENCRYPTED
     int setSsl(Socket*);
