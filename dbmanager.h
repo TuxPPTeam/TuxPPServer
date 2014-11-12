@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QtSql>
+#include <QHostAddress>
 #include "user.h"
 
 // DB connection constants
@@ -18,6 +19,7 @@ class DBmanager : public QObject
     Q_OBJECT
 public:
     explicit DBmanager(QObject *parent = 0);
+
     bool establishConnection();
     void closeConnection();
     bool isConnected();
@@ -25,8 +27,10 @@ public:
     bool insertUser(User*);
     bool updateUser(User*);
     bool deleteUser(User*);
+
     User* getUserByID(quint64 ID);
     QList<User*> getUsersByName(QString);
+    User* getUserByNameAndKey(QString, QByteArray);
     QList<User*> listAllUsers();
 
 signals:

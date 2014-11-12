@@ -14,13 +14,15 @@ SOURCES += main.cpp\
     cryptor.cpp \
     dbmanager.cpp \
     tests.cpp \
-    server.cpp
+    server.cpp \
+    map.cpp
 
 HEADERS  += mainwindow.h \
     user.h \
     server.h \
     cryptor.h \
     dbmanager.h \
-    tests.h
+    tests.h \
+    map.h
 
 FORMS    += mainwindow.ui
