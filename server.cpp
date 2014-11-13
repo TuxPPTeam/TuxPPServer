@@ -1,10 +1,11 @@
 #include "server.h"
 
-Server::Server(QMainWindow *w, QObject *parent) :
+Server::Server(QObject *parent) :
     QTcpServer(parent),
-    window(w)
+    window((QMainWindow*)parent)
 {
     manager.establishConnection();
+    connect(&onlineUsers, SIGNAL(changed(QList<User*>)), window, SLOT(updateUI(QList<User*>)));
 }
 
 void Server::start() {
@@ -91,7 +92,7 @@ void Server::readyRead() {
         {
             case ECHO:      echo(data.mid(sizeof(Command)), socket); break;
             case LOGIN:     login(data.mid(sizeof(Command)), socket); break;
-            case LOGOUT:    logout(data.mid(sizeof(Command))); break;
+            case LOGOUT:    logout(data.mid(sizeof(Command)), socket); break;
             case REGISTER:  registerUser(data.mid(sizeof(Command)), socket); break;
             case GETUSERS:  getUserList(socket); break;
             default:        qDebug() << "Unknown command = " << data.at(0);
@@ -144,13 +145,26 @@ bool Server::registerUser(QByteArray data, QSocket *socket) {
 
     int n = data.indexOf(commandDelimiter);
 
-    User *user = new User(this, data.left(n+1), data.mid(n+1), socket);
+    if (n < 0) {
+        socket->write("Wrong format of data");
+        return false;
+    }
+
+    QByteArray name = data.left(n);
+    QByteArray key = data.mid(n+1);
+    User *user = new User(this, name, key, socket);
     bool result = manager.insertUser(user);
+    if (result) {
+        socket->write(QByteArray("Registered as \"" + user->getUsername().toLocal8Bit() + "\" with ID: ").append('0' + user->getID()));
+    }
+    else {
+        socket->write("Not registered, try again.");
+    }
     user->deleteLater();
     return result;
 }
 
-bool Server::login(QByteArray userName, QSocket *socket) {
+bool Server::login(QByteArray userName, QSocket* socket) {
     if (!manager.isConnected()) {
         qDebug() << "DB is not connected!";
         return false;
@@ -162,10 +176,11 @@ bool Server::login(QByteArray userName, QSocket *socket) {
 #else
     QList<User*> users = manager.getUsersByName(userName);
     if (users.isEmpty()) {
-        qDebug() << "Cannot login, unregistered user or wrong username";
+        socket->write("Cannot login, unregistered user or wrong username.");
+        qDebug() << "Cannot login, unregistered user or wrong username.";
         return false;
     }
-    u = manager.getUsersByName(userName).first();
+    u = users.first();
 #endif
     if (u == NULL) {
         return false;
@@ -174,12 +189,13 @@ bool Server::login(QByteArray userName, QSocket *socket) {
     u->setSocket(socket);
     onlineUsers.add(u);
     manager.updateUser(u);
-    socket->write(QByteArray("Logged as \"" + u->getUsername().toLocal8Bit() + "\"\n"));
+
+    socket->write(QByteArray("Logged as \"" + u->getUsername().toLocal8Bit() + "\"\nYour ID: ").append('0' + u->getID()));
 
     return true;
 }
 
-bool Server::logout(QByteArray userName) {
+bool Server::logout(QByteArray userName, QSocket *socket) {
     if (!manager.isConnected()) {
         qDebug() << "DB is not connected!";
         return false;
@@ -190,7 +206,7 @@ bool Server::logout(QByteArray userName) {
 #else
     QList<User*> users = manager.getUsersByName(userName);
     if (users.isEmpty()) {
-        qDebug() << "Cannot logout, unregistered user or wrong username";
+        qDebug() << "Cannot logout, unregistered user or wrong username.";
         return false;
     }
     u = manager.getUsersByName(userName).first();
@@ -198,13 +214,14 @@ bool Server::logout(QByteArray userName) {
     if (u == NULL) {
         return false;
     }
+    socket->write(QByteArray("Logouted"));
     return onlineUsers.remove(u) > 0;
 }
 
 bool Server::getUserList(QSocket *socket) {
     QByteArray userList("Online users:\n");
     foreach (User* u, onlineUsers.getAll()) {
-        userList.append('\t').append(u->getUsername()).append('\n');
+        userList.append(u->getUsername()).append('\n');
     }
 
     return socket->write(userList) > 0;

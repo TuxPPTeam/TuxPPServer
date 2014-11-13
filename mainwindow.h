@@ -18,8 +18,10 @@ public:
 
 private slots:
     void on_pushButton_clicked();
-    void on_pushButton_2_clicked();
-    void writeData(QByteArray Data);
+    void on_pushButton_2_clicked();   
+
+public slots:
+    void updateUI(QList<User *> users);
 
 private:
     Ui::MainWindow *ui;

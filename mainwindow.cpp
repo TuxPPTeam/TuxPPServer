@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
     server = new Server(this);
-    connect(server, SIGNAL(dataReady(QByteArray)), this, SLOT(writeData(QByteArray)));
+    ui->statusBar->addPermanentWidget(ui->statusLabel);
 }
 
 MainWindow::~MainWindow() {
@@ -21,6 +21,10 @@ void MainWindow::on_pushButton_2_clicked() {
     server->shutdown();
 }
 
-void MainWindow::writeData(QByteArray Data) {
-    ui->plainTextEdit->appendPlainText(Data);
+void MainWindow::updateUI(QList<User*> users) {
+    ui->plainTextEdit->clear();
+    foreach (User *u, users) {
+        ui->plainTextEdit->appendPlainText(u->getUsername());
+    }
+    ui->statusLabel->setText(QString("Online users: " + users.length()));
 }

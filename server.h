@@ -8,16 +8,17 @@
 #include <QMainWindow>
 #include <QList>
 #include <QMap>
+#include <QPlainTextEdit>
 #include "dbmanager.h"
 #include "map.h"
 
-static const char commandDelimiter = '\n';
+static const char commandDelimiter = '\0';
 
 class Server : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit Server(QMainWindow*, QObject *parent = 0);
+    explicit Server(QObject *parent = 0);
 
 signals:
     void dataReady(QByteArray);
@@ -50,8 +51,8 @@ private:
 
     void echo(QByteArray, QSocket*);
     bool registerUser(QByteArray, QSocket*);
-    bool login(QByteArray, QSocket*);
-    bool logout(QByteArray);
+    bool login(QByteArray, QSocket *socket);
+    bool logout(QByteArray, QSocket *socket);
     bool getUserList(QSocket*);
     bool isUserAlive(User*);
 
