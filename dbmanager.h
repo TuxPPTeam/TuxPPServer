@@ -4,11 +4,13 @@
 #include <QObject>
 #include <QtSql>
 #include <QHostAddress>
+#include <QtGlobal>
 #include "user.h"
 
 // DB connection constants
 static const QString serverName = "MAJO\\SQLEXPRESS";
 static const QString dbName = "users";
+static const QString tableName = "users";
 static const QString dsn =  QString("Driver={SQL Server Native Client 11.0};Server=%1;Database=%2;Trusted_Connection=Yes;")
                             .arg(serverName)
                             .arg(dbName);

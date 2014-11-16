@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "server.h"
+#include "usertablemodel.h"
 
 namespace Ui {
 class MainWindow;
@@ -21,11 +22,11 @@ private slots:
     void on_pushButton_2_clicked();   
 
 public slots:
-    void updateUI(QList<User *> users);
 
 private:
     Ui::MainWindow *ui;
     Server *server;
+    UserTableModel *model;
 };
 
 #endif // MAINWINDOW_H

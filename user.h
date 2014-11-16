@@ -15,8 +15,8 @@ class User : public QObject
     Q_OBJECT
 public:
     explicit User(QObject *parent = 0);
-    explicit User(QObject *parent = 0, QString userName = "", /*qint32 host = 0,*/ QByteArray pubKey = "", QSocket *socket = NULL);
-    explicit User(QObject *parent = 0, qint64 = 0, QString userName = "", /*qint32 host = 0,*/ QByteArray pubKey = "", QSocket *socket = NULL);    
+    explicit User(QObject *parent = 0, QString userName = "", QByteArray pubKey = "", QSocket *socket = NULL);
+    explicit User(QObject *parent = 0, qint64 = 0, QString userName = "", QByteArray pubKey = "", QSocket *socket = NULL);
 
     qint64 getID() const;
     QString getUsername() const;

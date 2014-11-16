@@ -15,7 +15,7 @@ SOURCES += main.cpp\
     dbmanager.cpp \
     tests.cpp \
     server.cpp \
-    map.cpp
+    usertablemodel.cpp
 
 HEADERS  += mainwindow.h \
     user.h \
@@ -23,6 +23,6 @@ HEADERS  += mainwindow.h \
     cryptor.h \
     dbmanager.h \
     tests.h \
-    map.h
+    usertablemodel.h
 
 FORMS    += mainwindow.ui

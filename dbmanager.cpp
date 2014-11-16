@@ -6,7 +6,12 @@ DBmanager::DBmanager(QObject *parent) :
 }
 
 bool DBmanager::establishConnection() {
+#ifdef Q_OS_WIN
     db = QSqlDatabase::addDatabase("QODBC");
+#else
+    // TODO: add other OS supported DB driver
+
+#endif
     db.setDatabaseName(dsn);
     if (db.open()) {
         qDebug() << "DB connection opened";
@@ -29,7 +34,7 @@ bool DBmanager::isConnected() {
 
 bool DBmanager::insertUser(User *user) {
     QSqlQuery query;
-    query.prepare("INSERT INTO " + dbName + " (username, ip_address, pub_key) OUTPUT INSERTED.ID "
+    query.prepare("INSERT INTO " + tableName + " (username, ip_address, pub_key) OUTPUT INSERTED.ID "
                   "VALUES (?, ?, ?)");
     //query.addBindValue(dbName);
     query.addBindValue(user->getUsername());
@@ -47,7 +52,7 @@ bool DBmanager::insertUser(User *user) {
 
 bool DBmanager::updateUser(User *user) {
     QSqlQuery query;
-    query.prepare("UPDATE " + dbName + " SET username = ?, ip_address = ?,pub_key = ? WHERE id = ?");
+    query.prepare("UPDATE " + tableName + " SET username = ?, ip_address = ?,pub_key = ? WHERE id = ?");
     //query.addBindValue(dbName);
     query.addBindValue(user->getUsername());
     if (user->getSocket() != NULL)
@@ -61,14 +66,14 @@ bool DBmanager::updateUser(User *user) {
 
 bool DBmanager::deleteUser(User *user) {
     QSqlQuery query;
-    query.prepare("DELETE FROM " + dbName + " WHERE id = ?");
+    query.prepare("DELETE FROM " + tableName + " WHERE id = ?");
     query.addBindValue(user->getID());
     return query.exec();
 }
 
 User* DBmanager::getUserByID(quint64 ID) {
     QSqlQuery query;
-    query.prepare("SELECT id, username, ip_address, pub_key FROM " + dbName + " WHERE id = ?");
+    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE id = ?");
     query.addBindValue(ID);
     query.exec();
     if (!query.next()) {
@@ -83,7 +88,7 @@ User* DBmanager::getUserByID(quint64 ID) {
 QList<User*> DBmanager::getUsersByName(QString name) {
     QList<User*> users;
     QSqlQuery query;
-    query.prepare("SELECT id, username, ip_address, pub_key FROM " + dbName + " WHERE username = ?");
+    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE username = ?");
     query.addBindValue(name);
     query.exec();
 
@@ -98,7 +103,7 @@ QList<User*> DBmanager::getUsersByName(QString name) {
 
 User* DBmanager::getUserByNameAndKey(QString name, QByteArray key) {
     QSqlQuery query;
-    query.prepare("SELECT id, username, ip_address, pub_key FROM " + dbName + " WHERE username = ? AND pub_key = ?");
+    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE username = ? AND pub_key = ?");
     query.addBindValue(name);
     query.addBindValue(key);
     query.exec();
@@ -115,7 +120,7 @@ User* DBmanager::getUserByNameAndKey(QString name, QByteArray key) {
 QList<User*> DBmanager::listAllUsers() {
     QList<User*> users;
     QSqlQuery query;
-    query.prepare("SELECT id, username, ip_address, pub_key FROM " + dbName);
+    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName);
     query.exec();
 
     while (query.next()) {

@@ -1,11 +1,12 @@
 #include "server.h"
 
 Server::Server(QObject *parent) :
-    QTcpServer(parent),
-    window((QMainWindow*)parent)
+    QTcpServer(parent)/*,
+    window((QMainWindow*)parent)*/
 {
     manager.establishConnection();
-    connect(&onlineUsers, SIGNAL(changed(QList<User*>)), window, SLOT(updateUI(QList<User*>)));
+    //connect(&onlineUsers, SIGNAL(changed(QList<User*>)), window, SLOT(updateUI(QList<User*>)));
+
 }
 
 void Server::start() {
@@ -29,7 +30,7 @@ void Server::shutdown() {
     }
 
     // Delete all online users
-    onlineUsers.removeAll();
+    onlineUsers.clear();
 
     manager.closeConnection();
     qDebug() << "Server is shut down";
@@ -90,10 +91,10 @@ void Server::readyRead() {
 
         switch (data.at(0))
         {
-            case ECHO:      echo(data.mid(sizeof(Command)), socket); break;
-            case LOGIN:     login(data.mid(sizeof(Command)), socket); break;
-            case LOGOUT:    logout(data.mid(sizeof(Command)), socket); break;
-            case REGISTER:  registerUser(data.mid(sizeof(Command)), socket); break;
+            case ECHO:      echo(data.mid(sizeof(char*)), socket); break;
+            case LOGIN:     login(data.mid(sizeof(char*)), socket); break;
+            case LOGOUT:    logout(data.mid(sizeof(char*)), socket); break;
+            case REGISTER:  registerUser(data.mid(sizeof(char*)), socket); break;
             case GETUSERS:  getUserList(socket); break;
             default:        qDebug() << "Unknown command = " << data.at(0);
         }
@@ -187,7 +188,10 @@ bool Server::login(QByteArray userName, QSocket* socket) {
     }
 
     u->setSocket(socket);
-    onlineUsers.add(u);
+
+    onlineUsers.append(u);
+    emit usersChanged(&onlineUsers);
+
     manager.updateUser(u);
 
     socket->write(QByteArray("Logged as \"" + u->getUsername().toLocal8Bit() + "\"\nYour ID: ").append('0' + u->getID()));
@@ -215,20 +219,33 @@ bool Server::logout(QByteArray userName, QSocket *socket) {
         return false;
     }
     socket->write(QByteArray("Logouted"));
-    return onlineUsers.remove(u) > 0;
+
+    bool res = onlineUsers.removeAll(u) > 0;
+    emit usersChanged(&onlineUsers);
+    return res;
 }
 
 bool Server::getUserList(QSocket *socket) {
-    QByteArray userList("Online users:\n");
-    foreach (User* u, onlineUsers.getAll()) {
-        userList.append(u->getUsername()).append('\n');
+    QByteArray userList;
+    Command cmd = GETUSERS;
+    userList.append((char*)&cmd, sizeof(char*));
+
+    foreach (User* u, onlineUsers) {
+        userList.append(u->getUsername())
+                .append(commandDelimiter)
+                .append(u->getSocket()->peerAddress().toString())
+                .append(commandDelimiter);
     }
 
     return socket->write(userList) > 0;
 }
 
-bool Server::isUserAlive(User *u) {
+QList<User*>* Server::getUsers() {
+    return &onlineUsers;
+}
 
+bool Server::isUserAlive(User *u) {
+    return false;
 }
 
 void Server::refresh() {

@@ -5,11 +5,11 @@
 //#define ENCRYPTED
 
 #include <QTcpServer>
-#include <QMainWindow>
 #include <QList>
 #include <QMap>
 #include <QPlainTextEdit>
 #include "dbmanager.h"
+//#include "mainwindow.h"
 #include "map.h"
 
 static const char commandDelimiter = '\0';
@@ -19,9 +19,11 @@ class Server : public QTcpServer
     Q_OBJECT
 public:
     explicit Server(QObject *parent = 0);
+    QList<User*>* getUsers();
 
 signals:
     void dataReady(QByteArray);
+    void usersChanged(QList<User*>*);
 
 public slots:
     void start();
@@ -43,10 +45,8 @@ protected:
     void incomingConnection(qintptr);
 
 private:
-    QMainWindow *window;
     QList<QSocket*> sockets;
-    //QMap<quint64, User*> onlineUsers;
-    Map onlineUsers;
+    QList<User*> onlineUsers;
     DBmanager manager;
 
     void echo(QByteArray, QSocket*);
