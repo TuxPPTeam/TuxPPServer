@@ -159,7 +159,7 @@ int Server::setSsl(Socket *socket) {
 void Server::echo(QByteArray data, QSocket *socket) {
     int n;
     if ((n = socket->write(data)) > 0) {
-        qDebug() << n + " bytes written to " + socket->peerAddress().toString();
+        qDebug() << n << " bytes written to " << socket->peerAddress().toString();
     }
 }
 
