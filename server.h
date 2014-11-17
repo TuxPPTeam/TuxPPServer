@@ -5,56 +5,58 @@
 //#define ENCRYPTED
 
 #include <QTcpServer>
-#include <QSslSocket>
-#include <QMainWindow>
 #include <QList>
 #include <QMap>
+#include <QPlainTextEdit>
 #include "dbmanager.h"
+//#include "mainwindow.h"
+//#include "map.h"
 
-#ifdef ENCRYPTED
-    typedef QSslSocket QSocket;
-#else
-    typedef QTcpSocket QSocket;
-#endif
-
-
-
+static const char commandDelimiter = '\0';
 
 class Server : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit Server(QMainWindow*, QObject *parent = 0);
+    explicit Server(QObject *parent = 0);
+    QList<User*>* getUsers();
 
 signals:
     void dataReady(QByteArray);
+    void usersChanged(QList<User*>*);
 
 public slots:
     void start();
     void shutdown();
 
 private slots:
-    void socketReady();
-    void errorOccured(QList<QSslError>);
     void disconnected();
     void readyRead();
+    void refresh();
+
+#ifdef ENCRYPTED
+    void socketReady();
+    void errorOccured(QList<QSslError>);
+#else
+    void errorOccured(QAbstractSocket::SocketError);
+#endif
 
 protected:
     void incomingConnection(qintptr);
 
 private:
-    QMainWindow *window;
     QList<QSocket*> sockets;
-    QMap<quint64, User*> onlineUsers;
+    QList<User*> onlineUsers;
     DBmanager manager;
 
-    void echo(QByteArray, QSocket *socket);
-    bool registerUser(QByteArray, quint32 host);
-    bool login(QByteArray, quint32 host, QSocket *socket);
-    bool logout(QByteArray);
+    void echo(QByteArray, QSocket*);
+    bool registerUser(QByteArray, QSocket*);
+    bool login(QByteArray, QSocket *socket);
+    bool logout(QByteArray, QSocket *socket);
     bool getUserList(QSocket*);
+    bool isUserAlive(User*);
 
-    enum command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
+    enum Command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
 
 #ifdef ENCRYPTED
     int setSsl(Socket*);

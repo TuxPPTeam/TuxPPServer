@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "server.h"
+#include "usertablemodel.h"
 
 namespace Ui {
 class MainWindow;
@@ -18,12 +19,14 @@ public:
 
 private slots:
     void on_pushButton_clicked();
-    void on_pushButton_2_clicked();
-    void writeData(QByteArray Data);
+    void on_pushButton_2_clicked();   
+
+public slots:
 
 private:
     Ui::MainWindow *ui;
     Server *server;
+    UserTableModel *model;
 };
 
 #endif // MAINWINDOW_H
