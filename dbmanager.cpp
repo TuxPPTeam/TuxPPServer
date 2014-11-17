@@ -9,8 +9,7 @@ bool DBmanager::establishConnection() {
 #ifdef Q_OS_WIN
     db = QSqlDatabase::addDatabase("QODBC");
 #else
-    // TODO: add other OS supported DB driver
-
+    db = QSqlDatabase::addDatabase("QSQLITE");
 #endif
     db.setDatabaseName(dsn);
     if (db.open()) {

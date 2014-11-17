@@ -8,12 +8,22 @@
 #include "user.h"
 
 // DB connection constants
+#ifdef Q_OS_WIN
 static const QString serverName = "MAJO\\SQLEXPRESS";
+#else
+static const QString serverName = "localhost";
+#endif
 static const QString dbName = "users";
 static const QString tableName = "users";
+#ifdef Q_OS_WIN
 static const QString dsn =  QString("Driver={SQL Server Native Client 11.0};Server=%1;Database=%2;Trusted_Connection=Yes;")
                             .arg(serverName)
                             .arg(dbName);
+#else
+static const QString dsn =  QString("Driver=QSQLITE;Server=%1;Database=%2;Trusted_Connection=Yes;")
+        .arg(serverName)
+        .arg(dbName);
+#endif
 
 
 class DBmanager : public QObject

@@ -10,7 +10,7 @@
 #include <QPlainTextEdit>
 #include "dbmanager.h"
 //#include "mainwindow.h"
-#include "map.h"
+//#include "map.h"
 
 static const char commandDelimiter = '\0';
 
