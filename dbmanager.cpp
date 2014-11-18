@@ -34,7 +34,10 @@ bool DBmanager::isConnected() {
 
 bool DBmanager::insertUser(User *user) {
     QSqlQuery query;
-    query.prepare("INSERT INTO " + tableName + " (username, ip_address, pub_key) OUTPUT INSERTED.ID "
+    query.prepare("INSERT INTO " + tableName + " (username, ip_address, pub_key) "
+              #ifdef Q_OS_WIN
+                  + "OUTPUT INSERTED.ID "
+              #endif
                   "VALUES (?, ?, ?)");
     //query.addBindValue(dbName);
     query.addBindValue(user->getUsername());
@@ -44,8 +47,11 @@ bool DBmanager::insertUser(User *user) {
         query.addBindValue(QVariant::String);
     query.addBindValue(user->getPubKey());
     bool res = query.exec();
+
+#ifdef Q_OS_WIN
     query.next();
     qDebug() << "Inserted user ID: " << query.value(0).toLongLong();
+#endif
 
     return res;
 }
