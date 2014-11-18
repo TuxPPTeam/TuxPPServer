@@ -7,7 +7,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = TuxPPServer
 TEMPLATE = app
 
-
 SOURCES += main.cpp\
         mainwindow.cpp \
     user.cpp \

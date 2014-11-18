@@ -10,6 +10,7 @@ bool DBmanager::establishConnection() {
     db = QSqlDatabase::addDatabase("QODBC");
 #else
     db = QSqlDatabase::addDatabase("QSQLITE");
+
 #endif
     db.setDatabaseName(dsn);
     if (db.open()) {

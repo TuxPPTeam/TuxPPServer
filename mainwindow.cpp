@@ -21,6 +21,11 @@ void MainWindow::on_pushButton_clicked() {
     server->start();
     ui->pushButton->setEnabled(false);
     ui->pushButton_2->setEnabled(true);
+    /*QSqlQuery q;
+    q.prepare("SELECT * FROM users");
+    q.exec();
+    q.next();
+    qDebug() << q.value(0) << q.value(1);*/
 }
 
 void MainWindow::on_pushButton_2_clicked() {

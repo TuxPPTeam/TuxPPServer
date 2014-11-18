@@ -8,7 +8,8 @@ class Tests: public QObject
 {
     Q_OBJECT
 private slots:
-    void testConnection();
+    void testAddUser();
+
 };
 
 #endif // TESTS_H
