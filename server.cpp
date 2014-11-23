@@ -92,9 +92,9 @@ void Server::readyRead() {
         switch (data.at(0))
         {
             case ECHO:      echo(data, socket); break;
-            case LOGIN:     login(data.mid(sizeof(char*)), socket); break;
-            case LOGOUT:    logout(data.mid(sizeof(char*)), socket); break;
-            case REGISTER:  registerUser(data.mid(sizeof(char*)), socket); break;
+            case LOGIN:     login(data.mid(1), socket); break;
+            case LOGOUT:    logout(data.mid(1), socket); break;
+            case REGISTER:  registerUser(data.mid(1), socket); break;
             case GETUSERS:  getUserList(socket); break;
             default:        qDebug() << "Unknown command = " << data.at(0);
         }
@@ -145,9 +145,11 @@ bool Server::registerUser(QByteArray data, QSocket *socket) {
     }
 
     int n = data.indexOf(commandDelimiter);
+    QByteArray response;
+    response.append((char)REGISTER);
 
     if (n < 0) {
-        socket->write("Wrong format of data");
+        socket->write(response.append('\0').append("Wrong format of data."));
         return false;
     }
 
@@ -156,13 +158,16 @@ bool Server::registerUser(QByteArray data, QSocket *socket) {
     User *user = new User(this, name, key, socket);
     bool result = manager.insertUser(user);
     if (result) {
-        QByteArray data = QByteArray("Registered as \"" + user->getUsername().toLocal8Bit() + "\" with ID: ").append('0' + user->getID());
-        data.prepend((char*)REGISTER);
-        socket->write(data);
+        response.append('\1')
+                .append("Registered as \"" + user->getUsername().toLocal8Bit() + "\" with ID: ")
+                .append('0' + user->getID())
+                .append(". Now you can login.");
     }
     else {
-        socket->write("Not registered, try again.");
+        response.append('\0');
+        response.append("Could not register. Username already in use.");
     }
+    socket->write(response);
     user->deleteLater();
     return result;
 }
@@ -174,18 +179,24 @@ bool Server::login(QByteArray userName, QSocket* socket) {
     }
 
     User* u;
+    QByteArray response;
+    response.append((char)LOGIN);
 #ifdef ENCRYPTED
     u = manager.getUserByNameAndKey(userName, );
 #else
     QList<User*> users = manager.getUsersByName(userName);
     if (users.isEmpty()) {
-        socket->write("Cannot login, unregistered user or wrong username.");
+        response.append('\0');
+        response.append("Cannot login, unregistered user or wrong username.");
+        socket->write(response);
         qDebug() << "Cannot login, unregistered user or wrong username.";
         return false;
     }
     u = users.first();
 #endif
     if (u == NULL) {
+        response.append('\0');
+        socket->write(response);
         return false;
     }
 
@@ -196,52 +207,36 @@ bool Server::login(QByteArray userName, QSocket* socket) {
 
     manager.updateUser(u);
 
-    socket->write(QByteArray("Logged as \"" + u->getUsername().toLocal8Bit() + "\"\nYour ID: ").append('0' + u->getID()));
+    response.append('\1');
+    //response.append("Logged as \"" + u->getUsername().toLocal8Bit() + "\"\nYour ID: ").append('0' + u->getID());
+    socket->write(response);
 
     return true;
 }
 
 bool Server::logout(QByteArray userName, QSocket *socket) {
-    /*if (!manager.isConnected()) {
-        qDebug() << "DB is not connected!";
-        return false;
-    }
-    User* u;
-#ifdef ENCRYPTED
-    u = manager.getUserByNameAndKey(userName, );
-#else
-    QList<User*> users = manager.getUsersByName(userName);
-    if (users.isEmpty()) {
-        qDebug() << "Cannot logout, unregistered user or wrong username.";
-        return false;
-    }
-    u = manager.getUsersByName(userName).first();
-#endif
-    if (u == NULL) {
-        return false;
-    }*/
-
     foreach(User* u, onlineUsers) {
         if (u->getUsername() == QString(userName)) {
             onlineUsers.removeAll(u);
-            break;
+            QByteArray response;
+            response.append((char)LOGOUT);
+            socket->write(response);
+            emit usersChanged(&onlineUsers);
+            return true;
         }
     }
 
-    socket->write(QByteArray("Logouted"));
-
-    //bool res = onlineUsers.removeAll(u) > 0;
-    emit usersChanged(&onlineUsers);
-    return true;
+    return false;
 }
 
 bool Server::getUserList(QSocket *socket) {
     QByteArray userList;
-    Command cmd = GETUSERS;
-    userList.append((char*)&cmd, sizeof(char*));
+    userList.append((char)GETUSERS);
 
     foreach (User* u, onlineUsers) {
         userList.append(u->getUsername())
+                .append(commandDelimiter)
+                .append(u->getPubKey())
                 .append(commandDelimiter)
                 .append(u->getSocket()->peerAddress().toString())
                 .append(commandDelimiter);

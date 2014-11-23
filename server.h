@@ -12,7 +12,7 @@
 //#include "mainwindow.h"
 //#include "map.h"
 
-static const char commandDelimiter = '\0';
+static const char commandDelimiter = '\31';
 
 class Server : public QTcpServer
 {

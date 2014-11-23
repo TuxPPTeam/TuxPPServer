@@ -23,6 +23,10 @@ QVariant UserTableModel::data(const QModelIndex &index, int role) const {
          return QVariant();
      }
 
+     if (!users->at(index.row())->getSocket()->isOpen()) {
+         return QVariant();
+     }
+
      if (role == Qt::DisplayRole) {
          switch (index.column()) {
             case 0:     return users->at(index.row())->getID();

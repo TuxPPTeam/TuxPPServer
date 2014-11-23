@@ -39,7 +39,6 @@ bool DBmanager::insertUser(User *user) {
                   + "OUTPUT INSERTED.ID "
               #endif
                   "VALUES (?, ?, ?)");
-    //query.addBindValue(dbName);
     query.addBindValue(user->getUsername());
     if (user->getSocket() != NULL)
         query.addBindValue(user->getSocket()->peerAddress().toString());
