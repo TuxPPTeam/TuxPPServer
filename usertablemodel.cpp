@@ -19,7 +19,7 @@ QVariant UserTableModel::data(const QModelIndex &index, int role) const {
          return QVariant();
     }
 
-     if (index.row() >= users->size() || index.column() >= 4) {
+     if (index.row() >= users->count() || index.column() >= 4) {
          return QVariant();
      }
 

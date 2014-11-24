@@ -10,6 +10,9 @@ Server::Server(QObject *parent) :
 }
 
 void Server::start() {
+    if (!manager.isConnected()) {
+        manager.establishConnection();
+    }
     if(!this->listen(QHostAddress::Any, PORTNO)) {
         qDebug() << "Could not start server";
     }
