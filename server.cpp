@@ -1,4 +1,5 @@
 #include "server.h"
+#include <QSslConfiguration>
 
 Server::Server(QObject *parent) :
     QTcpServer(parent)/*,
@@ -6,7 +7,7 @@ Server::Server(QObject *parent) :
 {
     manager.establishConnection();
     //connect(&onlineUsers, SIGNAL(changed(QList<User*>)), window, SLOT(updateUI(QList<User*>)));
-
+    
 }
 
 void Server::start() {
@@ -43,6 +44,7 @@ void Server::disconnected() {
     // Get calling socket
     QSocket *socket = qobject_cast<QSocket*>(sender());
     qDebug() << socket->peerAddress().toString() << " disconnected.";
+    qDebug() << "Error:" << socket->errorString();
     // Remove it from active sockets and delete
     sockets.removeAll(socket);
     socket->deleteLater();
@@ -64,6 +66,7 @@ void Server::incomingConnection(qintptr socketDescriptor) {
         connect(socket, SIGNAL(sslErrors(const QList<QSslError>)), this, SLOT(errorOccured(QList<QSslError>)));
         // Set needed encryption infiormation and start connection encryption
         setSsl(socket);
+        qDebug() << socket->state();
         socket->startServerEncryption();
 #else
         qDebug() << socket->peerAddress().toString() << " connected.";
@@ -84,7 +87,7 @@ void Server::readyRead() {
     QSocket *socket = qobject_cast<QSocket*>(sender());
 #ifdef ENCRYPTED
     if (socket->isEncrypted()) {
-        //QSslConfiguration config = socket->sslConfiguration();
+        QSslConfiguration config = socket->sslConfiguration();
 #else
     if (socket->isReadable()) {
 #endif
@@ -108,8 +111,11 @@ void Server::readyRead() {
 }
 
 #ifdef ENCRYPTED
-int Server::setSsl(Socket *socket) {
+int Server::setSsl(QSocket *socket) {
     // Set all needed SSL information, such as ciphers, certificates, mode, ...
+    socket->addCaCertificate(QSslCertificate::fromPath("../certs/labak/ca.crt").first());
+    socket->setLocalCertificate("../certs/labak/server.crt");
+    socket->setPrivateKey("../certs/labak/server.key");
 
     return 0;
 }
@@ -125,7 +131,7 @@ void Server::socketReady() {
     QSocket *socket = qobject_cast<QSocket*>(sender());
     qDebug() << socket->peerAddress() << " connected.";
 
-    // Start recieving data
+    // Start receiving data
     connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
 }
 #else
@@ -185,7 +191,7 @@ bool Server::login(QByteArray userName, QSocket* socket) {
     QByteArray response;
     response.append((char)LOGIN);
 #ifdef ENCRYPTED
-    u = manager.getUserByNameAndKey(userName, );
+    u = manager.getUserByNameAndKey(userName, QByteArray());
 #else
     QList<User*> users = manager.getUsersByName(userName);
     if (users.isEmpty()) {

@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QSslSocket>
 
+#define ENCRYPTED
+
 #ifdef ENCRYPTED
     typedef QSslSocket QSocket;
 #else

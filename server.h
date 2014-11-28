@@ -2,7 +2,7 @@
 #define SERVER_H
 
 #define PORTNO 1234
-//#define ENCRYPTED
+#define ENCRYPTED
 
 #include <QTcpServer>
 #include <QList>
@@ -51,7 +51,7 @@ private:
 
     void echo(QByteArray, QSocket*);
     bool registerUser(QByteArray, QSocket*);
-    bool login(QByteArray, QSocket *socket);
+    bool login(QByteArray, QSslSocket *socket);
     bool logout(QByteArray, QSocket *socket);
     bool getUserList(QSocket*);
     bool isUserAlive(User*);
@@ -59,7 +59,7 @@ private:
     enum Command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
 
 #ifdef ENCRYPTED
-    int setSsl(Socket*);
+    int setSsl(QSocket*);
 #endif
 };
 
