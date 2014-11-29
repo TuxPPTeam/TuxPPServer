@@ -59,7 +59,7 @@ private:
     enum Command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
 
 #ifdef ENCRYPTED
-    int setSsl(QSocket*);
+    bool setSsl(QSocket*);
 #endif
 };
 

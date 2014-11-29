@@ -31,7 +31,7 @@ QVariant UserTableModel::data(const QModelIndex &index, int role) const {
          switch (index.column()) {
             case 0:     return users->at(index.row())->getID();
             case 1:     return users->at(index.row())->getUsername();
-            case 2:     return users->at(index.row())->getPubKey();
+            case 2:     return users->at(index.row())->getPubKey().toPem();
             case 3:     return users->at(index.row())->getSocket()->peerAddress().toString();
             default:    return QVariant();
          }

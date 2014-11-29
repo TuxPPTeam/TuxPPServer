@@ -33,6 +33,9 @@ bool DBmanager::isConnected() {
 }
 
 bool DBmanager::insertUser(User *user) {
+    if (!validateUser(user))
+        return false;
+
     QSqlQuery query;
     query.prepare("INSERT INTO " + tableName + " (username, ip_address, pub_key) "
               #ifdef Q_OS_WIN
@@ -44,7 +47,7 @@ bool DBmanager::insertUser(User *user) {
         query.addBindValue(user->getSocket()->peerAddress().toString());
     else
         query.addBindValue(QVariant::String);
-    query.addBindValue(user->getPubKey());
+    query.addBindValue(user->getPubKey().toPem());
     bool res = query.exec();
 
 #ifdef Q_OS_WIN
@@ -56,15 +59,18 @@ bool DBmanager::insertUser(User *user) {
 }
 
 bool DBmanager::updateUser(User *user) {
+    if (!validateUser(user))
+        return false;
+
     QSqlQuery query;
     query.prepare("UPDATE " + tableName + " SET username = ?, ip_address = ?,pub_key = ? WHERE id = ?");
-    //query.addBindValue(dbName);
+
     query.addBindValue(user->getUsername());
     if (user->getSocket() != NULL)
         query.addBindValue(user->getSocket()->peerAddress().toString());
     else
         query.addBindValue(QVariant::String);
-    query.addBindValue(user->getPubKey());
+    query.addBindValue(user->getPubKey().toPem());
     query.addBindValue(user->getID());
     return query.exec();
 }
@@ -108,7 +114,7 @@ QList<User*> DBmanager::getUsersByName(QString name) {
 
 User* DBmanager::getUserByNameAndKey(QString name, QByteArray key) {
     QSqlQuery query;
-    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE username = ? AND pub_key = ?");
+    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE username = ? AND pub_key = CAST(? AS BINARY(451))");
     query.addBindValue(name);
     query.addBindValue(key);
     query.exec();
@@ -135,4 +141,8 @@ QList<User*> DBmanager::listAllUsers() {
                               query.value(3).toByteArray()));
     }
     return users;
+}
+
+bool DBmanager::validateUser(User *u) {
+    return true;
 }

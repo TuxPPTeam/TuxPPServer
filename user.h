@@ -2,6 +2,7 @@
 #define USER_H
 
 #include <QObject>
+#include <QSslKey>
 #include <QSslSocket>
 
 #define ENCRYPTED
@@ -17,11 +18,12 @@ class User : public QObject
     Q_OBJECT
 public:
     explicit User(QObject *parent = 0, QString userName = "", QByteArray pubKey = "", QSocket *socket = NULL);
+    explicit User(QObject *parent = 0, QString userName = "", QSslKey pubKey = QSslKey(), QSocket *socket = NULL);
     explicit User(QObject *parent = 0, qint64 = 0, QString userName = "", QByteArray pubKey = "", QSocket *socket = NULL);
 
     qint64 getID() const;
     QString getUsername() const;
-    QByteArray getPubKey() const;
+    QSslKey getPubKey() const;
     QSocket* getSocket() const;
 
     bool operator==(const User &) const;
@@ -38,6 +40,7 @@ private:
     qint64 ID;
     QString username;
     QByteArray pubKey;
+    QSslKey key;
     QSocket* socket;
 
     static const unsigned int MAX_USERNAME_LENGTH = 32;

@@ -46,6 +46,8 @@ signals:
 public slots:
 
 private:
+    bool validateUser(User*);
+
     QSqlDatabase db;
 
 };

@@ -62,10 +62,10 @@ void Server::incomingConnection(qintptr socketDescriptor) {
         connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
 
 #ifdef ENCRYPTED
+        setSsl(socket);
         connect(socket, SIGNAL(encrypted()), this, SLOT(socketReady()));
         connect(socket, SIGNAL(sslErrors(const QList<QSslError>)), this, SLOT(errorOccured(QList<QSslError>)));
         // Set needed encryption infiormation and start connection encryption
-        setSsl(socket);
         qDebug() << socket->state();
         socket->startServerEncryption();
 #else
@@ -87,7 +87,7 @@ void Server::readyRead() {
     QSocket *socket = qobject_cast<QSocket*>(sender());
 #ifdef ENCRYPTED
     if (socket->isEncrypted()) {
-        QSslConfiguration config = socket->sslConfiguration();
+        //QSslConfiguration config = socket->sslConfiguration();
 #else
     if (socket->isReadable()) {
 #endif
@@ -111,19 +111,31 @@ void Server::readyRead() {
 }
 
 #ifdef ENCRYPTED
-int Server::setSsl(QSocket *socket) {
+bool Server::setSsl(QSocket *socket) {
     // Set all needed SSL information, such as ciphers, certificates, mode, ...
-    socket->addCaCertificate(QSslCertificate::fromPath("../certs/labak/ca.crt").first());
-    socket->setLocalCertificate("../certs/labak/server.crt");
+    QSslCertificate ca = QSslCertificate::fromPath("../certs/labak/ca.crt").first();
+    socket->addCaCertificate(ca);
+    QSslCertificate server = QSslCertificate::fromPath("../certs/labak/server.crt").first();
+    socket->setLocalCertificate(server);
     socket->setPrivateKey("../certs/labak/server.key");
 
-    return 0;
+    /*QList<QSslError> errors;
+    errors.append( QSslError(QSslError::CertificateUntrusted, ca));
+    errors.append( QSslError(QSslError::SelfSignedCertificateInChain, ca));
+    errors.append( QSslError(QSslError::CertificateUntrusted, server));
+    errors.append( QSslError(QSslError::SelfSignedCertificateInChain, server));
+    socket->ignoreSslErrors(errors);*/
+    socket->ignoreSslErrors();
+
+    return true;
 }
 
 void Server::errorOccured(QList<QSslError> errors) {
+    QSocket *socket = qobject_cast<QSocket*>(sender());
     foreach (QSslError error, errors) {
         qDebug() << "SSL error during hadshake: " << error.errorString();
     }
+    socket->ignoreSslErrors();
 }
 
 void Server::socketReady() {
@@ -153,18 +165,20 @@ bool Server::registerUser(QByteArray data, QSocket *socket) {
         return false;
     }
 
-    int n = data.indexOf(commandDelimiter);
+
+    //int n = data.indexOf(commandDelimiter);
     QByteArray response;
     response.append((char)REGISTER);
 
-    if (n < 0) {
+    /*if (n < 0) {
         socket->write(response.append('\0').append("Wrong format of data."));
         return false;
-    }
+    }*/
 
-    QByteArray name = data.left(n);
-    QByteArray key = data.mid(n+1);
-    User *user = new User(this, name, key, socket);
+    //QByteArray name = data.left(n);
+    //QByteArray key = data.mid(n+1);
+    User *user = new User(this, data, socket->peerCertificate().publicKey(), socket);
+    qDebug() << user->getPubKey().toPem().size();
     bool result = manager.insertUser(user);
     if (result) {
         response.append('\1')
@@ -191,7 +205,7 @@ bool Server::login(QByteArray userName, QSocket* socket) {
     QByteArray response;
     response.append((char)LOGIN);
 #ifdef ENCRYPTED
-    u = manager.getUserByNameAndKey(userName, QByteArray());
+    u = manager.getUserByNameAndKey(userName, socket->peerCertificate().publicKey().toPem());
 #else
     QList<User*> users = manager.getUsersByName(userName);
     if (users.isEmpty()) {
@@ -225,13 +239,14 @@ bool Server::login(QByteArray userName, QSocket* socket) {
 
 bool Server::logout(QByteArray userName, QSocket *socket) {
     foreach(User* u, onlineUsers) {
-        if (u->getUsername() == QString(userName)) {
-            onlineUsers.removeAll(u);
-            QByteArray response;
-            response.append((char)LOGOUT);
-            socket->write(response);
-            emit usersChanged(&onlineUsers);
-            return true;
+        if (u->getUsername() == QString(userName) &&
+            u->getPubKey() == socket->peerCertificate().publicKey()) {
+                onlineUsers.removeAll(u);
+                QByteArray response;
+                response.append((char)LOGOUT);
+                socket->write(response);
+                emit usersChanged(&onlineUsers);
+                return true;
         }
     }
 
@@ -245,7 +260,9 @@ bool Server::getUserList(QSocket *socket) {
     foreach (User* u, onlineUsers) {
         userList.append(u->getUsername())
                 .append(commandDelimiter)
-                .append(u->getPubKey())
+                .append(u->getPubKey().toPem())
+                .append(commandDelimiter)
+                .append(u->getPubKey().algorithm())
                 .append(commandDelimiter)
                 .append(u->getSocket()->peerAddress().toString())
                 .append(commandDelimiter);
