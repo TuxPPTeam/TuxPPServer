@@ -55,8 +55,9 @@ private:
     bool logout(QByteArray, QSocket *socket);
     bool getUserList(QSocket*);
     bool isUserAlive(User*);
+    void generateKey(QByteArray);
 
-    enum Command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS};
+    enum Command { ECHO, LOGIN, LOGOUT, REGISTER, GETUSERS, GENKEY };
 
 #ifdef ENCRYPTED
     bool setSsl(QSocket*);

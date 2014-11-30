@@ -102,6 +102,7 @@ void Server::readyRead() {
             case LOGOUT:    logout(data.mid(1), socket); break;
             case REGISTER:  registerUser(data.mid(1), socket); break;
             case GETUSERS:  getUserList(socket); break;
+            case GENKEY:    generateKey(data.mid(1));
             default:        qDebug() << "Unknown command = " << data.at(0);
         }
     }
@@ -119,14 +120,6 @@ bool Server::setSsl(QSocket *socket) {
     socket->setLocalCertificate(server);
     socket->setPrivateKey("../certs/labak/server.key");
 
-    /*QList<QSslError> errors;
-    errors.append( QSslError(QSslError::CertificateUntrusted, ca));
-    errors.append( QSslError(QSslError::SelfSignedCertificateInChain, ca));
-    errors.append( QSslError(QSslError::CertificateUntrusted, server));
-    errors.append( QSslError(QSslError::SelfSignedCertificateInChain, server));
-    socket->ignoreSslErrors(errors);*/
-    socket->ignoreSslErrors();
-
     return true;
 }
 
@@ -135,7 +128,7 @@ void Server::errorOccured(QList<QSslError> errors) {
     foreach (QSslError error, errors) {
         qDebug() << "SSL error during hadshake: " << error.errorString();
     }
-    socket->ignoreSslErrors();
+    socket->ignoreSslErrors(errors);
 }
 
 void Server::socketReady() {
@@ -230,7 +223,10 @@ bool Server::login(QByteArray userName, QSocket* socket) {
 
     manager.updateUser(u);
 
-    response.append('\1');
+    QByteArray byteID;
+    byteID.setNum(u->getID());
+    response.append('\1')
+            .append(byteID);
     //response.append("Logged as \"" + u->getUsername().toLocal8Bit() + "\"\nYour ID: ").append('0' + u->getID());
     socket->write(response);
 
@@ -258,7 +254,10 @@ bool Server::getUserList(QSocket *socket) {
     userList.append((char)GETUSERS);
 
     foreach (User* u, onlineUsers) {
-        userList.append(u->getUsername())
+        QByteArray userIdByte;
+        userList.append(userIdByte.setNum(u->getID()))
+                .append(commandDelimiter)
+                .append(u->getUsername())
                 .append(commandDelimiter)
                 .append(u->getPubKey().toPem())
                 .append(commandDelimiter)
@@ -269,6 +268,23 @@ bool Server::getUserList(QSocket *socket) {
     }
 
     return socket->write(userList) > 0;
+}
+
+void Server::generateKey(QByteArray data) {
+    QList<QByteArray> tokens = data.split(commandDelimiter);
+    long sourceUserID = tokens[0].toLong();
+    long destUserID = tokens[1].toLong();
+    QByteArray halfKey = tokens[2];
+    foreach(User *u, onlineUsers) {
+        if (u->getID() == destUserID) {
+            QByteArray response;
+            response.append((char)GENKEY)
+                    .append(tokens[0])
+                    .append(commandDelimiter)
+                    .append(halfKey);
+            u->getSocket()->write(response);
+        }
+    }
 }
 
 QList<User*>* Server::getUsers() {
