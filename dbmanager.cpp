@@ -63,14 +63,12 @@ bool DBmanager::updateUser(User *user) {
         return false;
 
     QSqlQuery query;
-    query.prepare("UPDATE " + tableName + " SET username = ?, ip_address = ?,pub_key = ? WHERE id = ?");
+    query.prepare("UPDATE " + tableName + " SET ip_address = ? WHERE id = ?");
 
-    query.addBindValue(user->getUsername());
     if (user->getSocket() != NULL)
         query.addBindValue(user->getSocket()->peerAddress().toString());
     else
         query.addBindValue(QVariant::String);
-    query.addBindValue(user->getPubKey().toPem());
     query.addBindValue(user->getID());
     return query.exec();
 }
@@ -114,7 +112,7 @@ QList<User*> DBmanager::getUsersByName(QString name) {
 
 User* DBmanager::getUserByNameAndKey(QString name, QByteArray key) {
     QSqlQuery query;
-    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE username = ? AND pub_key = CAST(? AS BINARY(451))");
+    query.prepare("SELECT id, username, ip_address, pub_key FROM " + tableName + " WHERE username = ? AND pub_key = ?");
     query.addBindValue(name);
     query.addBindValue(key);
     query.exec();
