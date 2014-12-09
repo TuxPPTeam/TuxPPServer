@@ -102,7 +102,9 @@ void Server::readyRead() {
             case LOGOUT:    logout(data.mid(1), socket); break;
             case REGISTER:  registerUser(data.mid(1), socket); break;
             case GETUSERS:  getUserList(socket); break;
-            case GENKEY:    generateKey(data.mid(1));
+            case GENKEY:    generateKey(data.mid(1)); break;
+            case CONREQ:
+            case CONRESP:   forward(data, socket); break;
             default:        qDebug() << "Unknown command = " << data.at(0);
         }
     }
@@ -283,6 +285,29 @@ void Server::generateKey(QByteArray data) {
                     .append(commandDelimiter)
                     .append(halfKey);
             u->getSocket()->write(response);
+        }
+    }
+}
+
+void Server::forward(QByteArray data, QSocket *socket) {
+    //TODO
+    //QByteArray response(data[0]);
+    QList<QByteArray> tokens = data.mid(1).split(commandDelimiter);
+    //long sourceUserID = tokens[0].toLong();
+    long destUserID = tokens[1].toLong();
+    //QByteArray data = tokens[2];
+
+    foreach(User *u, onlineUsers) {
+        if (u->getID() == tokens[1].toLong()) {
+            /*response.append(tokens[0])
+                    .append(commandDelimiter)
+                    .append(tokens[1])
+                    .append(commandDelimiter)
+                    .append(tokens[2]);*/
+            u->getSocket()->write(data);
+        }
+        else {
+            socket->write(QByteArray().append((char)CONERR));
         }
     }
 }
