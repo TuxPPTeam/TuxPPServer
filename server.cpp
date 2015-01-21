@@ -116,6 +116,13 @@ void Server::readyRead() {
 #ifdef ENCRYPTED
 bool Server::setSsl(QSocket *socket) {
     // Set all needed SSL information, such as ciphers, certificates, mode, ...
+    // Check if the cert exists
+    QFile cert("../certs/labak/ca.crt");
+    if (!cert.exists()) {
+        // We are doomed!
+        qDebug() << "Server certificate not found, the server will now crash";
+        exit(0);
+    }
     QSslCertificate ca = QSslCertificate::fromPath("../certs/labak/ca.crt").first();
     socket->addCaCertificate(ca);
     QSslCertificate server = QSslCertificate::fromPath("../certs/labak/server.crt").first();
